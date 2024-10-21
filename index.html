@@ -10,11 +10,11 @@
     <h1>Electronic Medical Records System</h1>
     <button onclick="connectMetamask()">Connect Metamask</button>
 
-    <h2>Grant Permission to Doctor</h2>
+    <h2>Grant Permission to Doctor ($$)</h2>
     <input type="text" id="doctorAddress" placeholder="Doctor Address" />
     <button onclick="grantPermission()">Grant Permission</button>
 
-    <h2>Add Medical Record</h2>
+    <h2>Add Medical Record ($$)</h2>
     <input type="text" id="patientAddress" placeholder="Patient Address" />
     <input type="text" id="diagnosis" placeholder="Diagnosis" />
     <input type="text" id="treatment" placeholder="Treatment" />
@@ -253,8 +253,8 @@
 
                     records.forEach(record => {
                         const listItem = document.createElement('li');
-                        listItem.textContent = `Diagnosis: ${record.diagnosis}, Treatment: ${record.treatment}, Date: ${new Date(record.date * 1000).toLocaleString()}`;
-                        recordsList.appendChild(listItem);
+						listItem.textContent = `Diagnosis: ${record.diagnosis}, Treatment: ${record.treatment}, Date: ${new Date(Number(record.date) * 1000).toLocaleString()}`;
+						recordsList.appendChild(listItem);
                     });
                 })
                 .catch(function(error) {
