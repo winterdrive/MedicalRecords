@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Records DApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Electronic Medical Records System</h1>
+    <button onclick="connectMetamask()">Connect Metamask</button>
+
+    <h2>Grant Permission to Doctor</h2>
+    <input type="text" id="doctorAddress" placeholder="Doctor Address" />
+    <button onclick="grantPermission()">Grant Permission</button>
+
+    <h2>Add Medical Record</h2>
+    <input type="text" id="patientAddress" placeholder="Patient Address" />
+    <input type="text" id="diagnosis" placeholder="Diagnosis" />
+    <input type="text" id="treatment" placeholder="Treatment" />
+    <button onclick="addMedicalRecord()">Add Medical Record</button>
+
+    <h2>View Medical Records</h2>
+    <input type="text" id="viewPatientAddress" placeholder="Patient Address" />
+    <button onclick="viewMedicalRecords()">View Records</button>
+    <ul id="medicalRecords"></ul>
+
+    <script>
+        let web3;
+        let medicalRecordsContract;
+        const contractAddress = '0x0f538Af026487D94F6f49d780C9377CEBc0f47DB'; // Replace with your deployed contract address
+        const contractABI = [[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "patient",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "diagnosis",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "treatment",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "date",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "doctor",
+				"type": "address"
+			}
+		],
+		"name": "MedicalRecordAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "patient",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "doctor",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "granted",
+				"type": "bool"
+			}
+		],
+		"name": "PermissionGranted",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_patient",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "_diagnosis",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_treatment",
+				"type": "string"
+			}
+		],
+		"name": "addMedicalRecord",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_doctor",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "_granted",
+				"type": "bool"
+			}
+		],
+		"name": "grantPermission",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "permissions",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_patient",
+				"type": "address"
+			}
+		],
+		"name": "viewMedicalRecords",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "diagnosis",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "treatment",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "date",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "doctor",
+						"type": "address"
+					}
+				],
+				"internalType": "struct MedicalRecords.MedicalRecord[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]];
+
+        async function connectMetamask() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await ethereum.request({ method: 'eth_requestAccounts' });
+                medicalRecordsContract = new web3.eth.Contract(contractABI, contractAddress);
+                alert("Metamask connected!");
+            } else {
+                alert("Please install Metamask!");
+            }
+        }
+
+        async function grantPermission() {
+            const doctor = document.getElementById("doctorAddress").value;
+            const accounts = await web3.eth.getAccounts();
+            const patient = accounts[0];
+
+            medicalRecordsContract.methods.grantPermission(doctor, true).send({ from: patient })
+                .on('receipt', function(receipt) {
+                    alert('Permission granted to ' + doctor);
+                })
+                .on('error', function(error) {
+                    alert('Error: ' + error.message);
+                });
+        }
+
+        async function addMedicalRecord() {
+            const patient = document.getElementById("patientAddress").value;
+            const diagnosis = document.getElementById("diagnosis").value;
+            const treatment = document.getElementById("treatment").value;
+            const accounts = await web3.eth.getAccounts();
+            const doctor = accounts[0];
+
+            medicalRecordsContract.methods.addMedicalRecord(patient, diagnosis, treatment).send({ from: doctor })
+                .on('receipt', function(receipt) {
+                    alert('Medical record added!');
+                })
+                .on('error', function(error) {
+                    alert('Error: ' + error.message);
+                });
+        }
+
+        async function viewMedicalRecords() {
+            const patient = document.getElementById("viewPatientAddress").value;
+            const accounts = await web3.eth.getAccounts();
+            const doctor = accounts[0];
+
+            medicalRecordsContract.methods.viewMedicalRecords(patient).call({ from: doctor })
+                .then(function(records) {
+                    const recordsList = document.getElementById("medicalRecords");
+                    recordsList.innerHTML = '';  // Clear the list before appending
+
+                    records.forEach(record => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = `Diagnosis: ${record.diagnosis}, Treatment: ${record.treatment}, Date: ${new Date(record.date * 1000).toLocaleString()}`;
+                        recordsList.appendChild(listItem);
+                    });
+                })
+                .catch(function(error) {
+                    alert('Error: ' + error.message);
+                });
+        }
+    </script>
+</body>
+</html>
